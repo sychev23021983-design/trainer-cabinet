@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Trainer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  clients   Client[]
+  schedules Schedule[]
+  workoutTemplates WorkoutTemplate[]
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  trainerId   String
+  name        String
+  email       String?
+  phone       String?
+  birthDate   DateTime?
+  goal        String?
+  healthNotes String?
+  avatar      String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  trainer     Trainer  @relation(fields: [trainerId], references: [id])
+  subscriptions Subscription[]
+  sessions    Session[]
+  measurements Measurement[]
+  progressPhotos ProgressPhoto[]
+  payments    Payment[]
+}
+
+model Subscription {
+  id            String   @id @default(cuid())
+  clientId      String
+  type          String
+  totalSessions Int
+  usedSessions  Int      @default(0)
+  price         Float
+  startDate     DateTime @default(now())
+  endDate       DateTime?
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  client        Client   @relation(fields: [clientId], references: [id])
+}
+
+model Schedule {
+  id            String   @id @default(cuid())
+  trainerId     String
+  clientId      String?
+  type          String   @default("personal")
+  title         String?
+  startTime     DateTime
+  endTime       DateTime
+  status        String   @default("scheduled")
+  notes         String?
+  isRecurring   Boolean  @default(false)
+  recurringRule String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  trainer       Trainer  @relation(fields: [trainerId], references: [id])
+  session       Session?
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  scheduleId  String   @unique
+  clientId    String
+  duration    Int?
+  notes       String?
+  mood        String?
+  completedAt DateTime @default(now())
+  schedule    Schedule @relation(fields: [scheduleId], references: [id])
+  client      Client   @relation(fields: [clientId], references: [id])
+  exercises   SessionExercise[]
+}
+
+model WorkoutTemplate {
+  id          String   @id @default(cuid())
+  trainerId   String
+  name        String
+  goal        String?
+  level       String?
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  trainer     Trainer  @relation(fields: [trainerId], references: [id])
+  exercises   TemplateExercise[]
+}
+
+model TemplateExercise {
+  id         String   @id @default(cuid())
+  templateId String
+  name       String
+  sets       Int?
+  reps       String?
+  weight     String?
+  duration   Int?
+  rest       Int?
+  order      Int      @default(0)
+  notes      String?
+  template   WorkoutTemplate @relation(fields: [templateId], references: [id])
+}
+
+model SessionExercise {
+  id        String  @id @default(cuid())
+  sessionId String
+  name      String
+  sets      Int?
+  reps      String?
+  weight    String?
+  duration  Int?
+  notes     String?
+  order     Int     @default(0)
+  session   Session @relation(fields: [sessionId], references: [id])
+}
+
+model Measurement {
+  id       String   @id @default(cuid())
+  clientId String
+  date     DateTime @default(now())
+  weight   Float?
+  height   Float?
+  chest    Float?
+  waist    Float?
+  hips     Float?
+  bicep    Float?
+  notes    String?
+  client   Client   @relation(fields: [clientId], references: [id])
+}
+
+model ProgressPhoto {
+  id       String   @id @default(cuid())
+  clientId String
+  url      String
+  date     DateTime @default(now())
+  notes    String?
+  client   Client   @relation(fields: [clientId], references: [id])
+}
+
+model Payment {
+  id       String   @id @default(cuid())
+  clientId String
+  amount   Float
+  date     DateTime @default(now())
+  method   String?
+  status   String   @default("paid")
+  notes    String?
+  client   Client   @relation(fields: [clientId], references: [id])
+}
