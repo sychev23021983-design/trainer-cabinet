@@ -5,10 +5,12 @@ import { api } from '../utils/api'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
+import AddClientModal from '../components/clients/AddClientModal'
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([])
   const [search, setSearch] = useState('')
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => { api.get('/clients').then(r => setClients(r.data)) }, [])
 
@@ -24,9 +26,17 @@ export default function ClientsPage() {
 
   return (
     <div className="p-6">
+      {showModal && (
+        <AddClientModal
+          onClose={() => setShowModal(false)}
+          onAdded={client => setClients(prev => [client, ...prev])}
+        />
+      )}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Клиенты</h1>
-        <Button size="sm"><Plus size={16} /> Добавить</Button>
+        <Button size="sm" onClick={() => setShowModal(true)}>
+          <Plus size={16} /> Добавить
+        </Button>
       </div>
       <div className="relative mb-4">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -58,8 +68,13 @@ export default function ClientsPage() {
           )
         })}
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-gray-400">
-            {search ? 'Клиент не найден' : 'Добавьте первого клиента'}
+          <div className="text-center py-12 text-gray-400 text-sm">
+            {search ? 'Клиент не найден' : (
+              <div>
+                <div className="mb-3">Клиентов пока нет</div>
+                <Button size="sm" onClick={() => setShowModal(true)}><Plus size={16} /> Добавить первого</Button>
+              </div>
+            )}
           </div>
         )}
       </div>
