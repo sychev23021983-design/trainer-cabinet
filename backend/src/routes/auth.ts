@@ -15,7 +15,10 @@ authRouter.post('/register', async (req, res) => {
     const trainer = await prisma.trainer.create({ data: { email, password: hash, name, phone } })
     const token = jwt.sign({ trainerId: trainer.id }, SECRET, { expiresIn: '30d' })
     res.json({ token, trainer: { id: trainer.id, name: trainer.name, email: trainer.email } })
-  } catch (e) { res.status(500).json({ error: 'Server error' }) }
+  } catch (e) {
+    console.error('Register error:', e)
+    res.status(500).json({ error: 'Server error', detail: String(e) })
+  }
 })
 
 authRouter.post('/login', async (req, res) => {
@@ -27,7 +30,10 @@ authRouter.post('/login', async (req, res) => {
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' })
     const token = jwt.sign({ trainerId: trainer.id }, SECRET, { expiresIn: '30d' })
     res.json({ token, trainer: { id: trainer.id, name: trainer.name, email: trainer.email } })
-  } catch (e) { res.status(500).json({ error: 'Server error' }) }
+  } catch (e) {
+    console.error('Login error:', e)
+    res.status(500).json({ error: 'Server error', detail: String(e) })
+  }
 })
 
 authRouter.get('/me', async (req, res) => {
@@ -35,7 +41,10 @@ authRouter.get('/me', async (req, res) => {
   if (!token) return res.status(401).json({ error: 'Unauthorized' })
   try {
     const payload = jwt.verify(token, SECRET) as { trainerId: string }
-    const trainer = await prisma.trainer.findUnique({ where: { id: payload.trainerId }, select: { id: true, name: true, email: true, phone: true, avatar: true } })
+    const trainer = await prisma.trainer.findUnique({
+      where: { id: payload.trainerId },
+      select: { id: true, name: true, email: true, phone: true, avatar: true }
+    })
     res.json(trainer)
   } catch { res.status(401).json({ error: 'Invalid token' }) }
 })
